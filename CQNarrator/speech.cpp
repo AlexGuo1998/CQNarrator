@@ -56,14 +56,15 @@ DWORD WINAPI thdReader(PVOID pParam) {
 		//read
 		loga("Read: %s\n", nownode->text);
 		DWORD dwCount = MultiByteToWideChar(CP_ACP, 0, nownode->text, -1, NULL, 0);
-		wchar_t *wc = (wchar_t *)malloc(sizeof(wchar_t) * dwCount + 2);//TODO realloc
-		MultiByteToWideChar(CP_ACP, 0, nownode->text, -1, wc, sizeof(wchar_t) * dwCount + 2);
+		wchar_t *wc = (wchar_t *)malloc(sizeof(wchar_t) * dwCount);//TODO realloc
+		MultiByteToWideChar(CP_ACP, 0, nownode->text, -1, wc, dwCount);
 		pSpVoice->Speak(wc, (SpeechVoiceSpeakFlags)(SVSFIsNotXML), NULL);
 		log("Read finished\n");
 		queueCount--;
 		log("count--\n");
 		//free data
 		free(wc);
+		log("freewc\n");
 		free(nownode->text);
 		log("Free text OK\n");
 
@@ -117,8 +118,8 @@ long read(const char *str, int instruction) {
 	speechQueue_t *newnode, *node = &queueHead;
 	//alloc mem
 	log("alloc mem for queue\n");
-	if (!((newnode = (speechQueue_t *)malloc(sizeof(struct speechQueue))) && 
-		(newnode->text = (char *)malloc(strlen(str))))) 0;//todo raise err
+	if (!((newnode = (speechQueue_t *)malloc(sizeof(struct speechQueue))) &&
+		(newnode->text = (char *)malloc(strlen(str) + 1)))) 0;//todo raise err
 
 	strcpy(newnode->text, str);
 	newnode->next = NULL;
