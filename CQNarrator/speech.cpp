@@ -26,6 +26,7 @@ size_t queueCount = 0;
 
 #ifdef _DEBUG
 extern FILE *pLogfile;
+extern int ac;
 #endif // _DEBUG
 
 extern bool enabled;
@@ -37,42 +38,53 @@ DWORD WINAPI thdReader(PVOID pParam) {
 		return 1;
 	}
 
+	char str[1024];
+	//base64dec("dGVzdDEyMzEyM+a1i+ivlQ==", str);
+	//log("%s\n", str);
+
+	base64dec("AAAAAB+qX1AAC0FsZXhHdW8xOTk4AAAAAAAAABI=", str);
+	log("%s\n", str + 10);
+
+	log("%s\n", CQ_getStrangerInfo(ac, 2080321757UI64, 0));
+	base64dec(CQ_getStrangerInfo(ac, 2080321757UI64, 0), str);
+	log("%s\n", str + 10);
 
 	for (;;) {
 		WaitForSingleObject(hSemaphore, INFINITE);//todo raise err
-		log("Ready to read\n");
+		log("[ OK ] Get new sentense\n");
 		//unlink "next" node
 		speechQueue_t *nownode = queueHead.next;
 		if (nownode->next == NULL) {
 			//last node - protect
-			log("Last in queue\n");
+			log("[Info] Last in queue\n");
 			EnterCriticalSection(&csLastNodeChange);
 			queueHead.next = nownode->next;//maybe not NULL now
 			LeaveCriticalSection(&csLastNodeChange);
 		} else {
-			log("NOT Last in queue\n");
+			log("[Info] NOT Last in queue\n");
 			queueHead.next = nownode->next;
 		}
+		log("[ OK ] Set \"next\"\n");
 		//read
-		loga("Read: %s\n", nownode->text);
+		log("[Info] Read: %s\n", nownode->text);
 		DWORD dwCount = MultiByteToWideChar(CP_ACP, 0, nownode->text, -1, NULL, 0);
 		wchar_t *wc = (wchar_t *)malloc(sizeof(wchar_t) * dwCount);//todo realloc
 		MultiByteToWideChar(CP_ACP, 0, nownode->text, -1, wc, dwCount);
 		long stmno;
 		pSpVoice->Speak(wc, (SpeechVoiceSpeakFlags)(SVSFIsNotXML), &stmno);
-		log("Read finished\n");
+		log("[ OK ] Read finished\n");
 		queueCount--;
-		log("count--\n");
+		log("[ OK ] count--, = %d\n", queueCount);
 		//free data
 		free(wc);
-		log("freewc\n");
+		log("[ OK ] freewc\n");
 		free(nownode->text);
-		log("Free text OK\n");
+		log("[ OK ] Free text OK\n");
 
 		//process
 		switch (nownode->instruction) {
 		case -1: //Kill
-			log("Terminating thread\n");
+			log("[Info] Terminating thread\n");
 			pSpVoice->Release();
 			pSpVoice = NULL;
 			::CoUninitialize();
@@ -80,7 +92,7 @@ DWORD WINAPI thdReader(PVOID pParam) {
 			//todo free all nodes
 			free(nownode);
 			enabled = false;
-			log("Terminate OK\n");
+			log("[ OK ] Thread terminate OK\n");
 			return 0;
 			break;
 		default:
@@ -88,7 +100,7 @@ DWORD WINAPI thdReader(PVOID pParam) {
 		}
 		
 		free(nownode);
-		log("Free node OK\n");
+		log("[ OK ] Free node\n");
 
 	}
 	
@@ -118,15 +130,18 @@ long read(const char *str, int instruction) {
 
 	speechQueue_t *newnode, *node = &queueHead;
 	//alloc mem
-	log("alloc mem for queue\n");
-	if (!((newnode = (speechQueue_t *)malloc(sizeof(struct speechQueue))) && (newnode->text = (char *)malloc(strlen(str) + 1)))) 0;//todo raise err
-
+	log("[Info] alloc mem for queue\n");
+	if (!((newnode = (speechQueue_t *)malloc(sizeof(struct speechQueue))) && (newnode->text = (char *)malloc(strlen(str) + 1)))) {
+		log("[Fail] alloc mem failed\n");//todo raise err
+		return 1;
+	}
+	log("[ OK ] alloc mem\n");
 	strcpy(newnode->text, str);
 	newnode->next = NULL;
 	newnode->instruction = instruction;
 
 	//find tail
-	log("find tail\n");
+	log("[Info] find tail\n");
 	EnterCriticalSection(&csLastNodeChange);
 	while (node->next) {
 		node = node->next;
@@ -135,10 +150,10 @@ long read(const char *str, int instruction) {
 	node->next = newnode;
 	LeaveCriticalSection(&csLastNodeChange);
 	
-	log("Add one\n");
+	log("[Info] Add one\n");
 	queueCount++;
 	ReleaseSemaphore(hSemaphore, 1, NULL);
-	log("Add OK\n");
+	log("[ OK ] Add OK\n");
 	return 0;
 }
 

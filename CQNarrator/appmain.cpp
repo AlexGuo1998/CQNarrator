@@ -7,7 +7,6 @@
 #include "stdafx.h"
 //#include "string"
 #include "appmain.h" //应用AppID等信息，请正确填写，否则酷Q可能无法加载
-#include "functions.h"
 #include "speech.h"
 //using namespace std;
 
@@ -111,13 +110,11 @@ CQEVENT(int32_t, __eventDisable, 0)() {
 */
 CQEVENT(int32_t, __eventPrivateMsg, 24)(int32_t subType, int32_t sendTime, int64_t fromQQ, const char *msg, int32_t font) {
 	//counter++;
-#ifdef _DEBUG
-	if (pLogfile != NULL) loga("PUSH:%s\n", msg)
-#endif // _DEBUG
-	
 	read(msg, 0);
 	//CQ_getStrangerInfo
-	
+#ifdef _DEBUG
+	log("[ OK ] PUSH:%s\n", msg)
+#endif // _DEBUG
 	//如果要回复消息，请调用酷Q方法发送，并且这里 return EVENT_BLOCK - 截断本条消息，不再继续处理  注意：应用优先级设置为"最高"(10000)时，不得使用本返回值
 	//如果不回复消息，交由之后的应用/过滤器处理，这里 return EVENT_IGNORE - 忽略本条消息
 	return EVENT_IGNORE;
@@ -129,11 +126,10 @@ CQEVENT(int32_t, __eventPrivateMsg, 24)(int32_t subType, int32_t sendTime, int64
 */
 CQEVENT(int32_t, __eventGroupMsg, 36)(int32_t subType, int32_t sendTime, int64_t fromGroup, int64_t fromQQ, const char *fromAnonymous, const char *msg, int32_t font) {
 	//counter++;
-#ifdef _DEBUG
-	if (pLogfile != NULL) loga("PUSH:GroupMSG:%s\n", msg)
-#endif // _DEBUG
-
 	read(msg, 0);
+#ifdef _DEBUG
+	log("[ OK ] PUSH:GroupMSG:%s\n", msg)
+#endif // _DEBUG
 	return EVENT_IGNORE; //关于返回值说明, 见“_eventPrivateMsg”函数
 }
 

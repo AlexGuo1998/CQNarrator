@@ -15,7 +15,8 @@ typedef struct QQGroup {
 } QQGroup_t;
 
 bool initUser(void);
+void destroyUser(void);
 int saveUser(const char *filename);
 int loadUser(const char *filename);
 void freeUserData(void);
-QQUser_t * getUserInfo(int64_t QQID, int64_t GroupID = 0);
+int getUserInfo(int64_t QQID, int64_t GroupID, QQUser_t *groupuser, QQUser_t *defaultuser);
